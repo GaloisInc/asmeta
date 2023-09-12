@@ -128,6 +128,21 @@
       code/experimental/asmetal2cpp/asmetal2cpp_cli
     </module>
     <module>
+      code/experimental/asmetal2c/asmetal2c_codegen
+    </module>
+    <module>
+      code/experimental/asmetal2c/asmetal2c_hw
+    </module>
+    <module>
+      code/experimental/asmetal2c/asmetal2c_plugin
+    </module>
+    <module>
+      code/experimental/asmetal2c/asmetal2c.feature
+    </module>
+    <module>
+      code/experimental/asmetal2c/asmetal2c_cli
+    </module>
+    <module>
       asmeta.updatesite
     </module>
   </modules>

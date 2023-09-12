@@ -1,0 +1,11 @@
+/target/
+/xtend-gen/**
+
+# ignore generated files 
+
+*.cpp
+*.h
+
+
+*.java._trace
+*.xtendbin
