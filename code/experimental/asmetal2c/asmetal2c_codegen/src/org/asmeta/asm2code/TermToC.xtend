@@ -44,7 +44,7 @@ import asmeta.definitions.domains.ConcreteDomain
 import asmeta.definitions.domains.PowersetDomain
 import asmeta.definitions.domains.AbstractTd
 
-class TermToCpp extends ReflectiveVisitor<String> {
+class TermToC extends ReflectiveVisitor<String> {
 
 	package Integer numStaticParam
 	Asm res
@@ -391,8 +391,9 @@ class TermToCpp extends ReflectiveVisitor<String> {
 		// var FunctionDefinition fd = term.function as FunctionDefinition
 		var StringBuffer functionTerm = new StringBuffer
 		var name = new Util().parseFunction(term.function.name)
-		if (ExpressionToCpp.hasEvaluateVisitor(name)) { //if the funcion is an expression
-			return new ExpressionToCpp(res).evaluateFunction(name, term.arguments.terms);
+		val fqn = "_" + res.name + "." + (term.function instanceof ControlledFunction ? "out" : "in") + "." + term.function.name
+		if (ExpressionToC.hasEvaluateVisitor(name)) { //if the funcion is an expression
+			return new ExpressionToC(res).evaluateFunction(name, term.arguments.terms);
 		} else {
 			if (term.function.name == "iton") {
 				functionTerm.append("(unsigned int)")
@@ -412,7 +413,7 @@ class TermToCpp extends ReflectiveVisitor<String> {
 				functionTerm.append("(double)")
 				functionTerm.append(caseFunctionTermSupp(term.function, term))
 			}else {
-				functionTerm.append(term.function.name)
+				functionTerm.append(fqn)
 				functionTerm.append(caseFunctionTermSupp(term.function, term))
 			}
 			/*functionTerm.append(term.function.name)

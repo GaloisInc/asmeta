@@ -7,11 +7,8 @@ import asmeta.definitions.domains.AbstractTd
 import asmeta.definitions.domains.EnumTd
 import asmeta.structure.Asm
 import asmeta.transitionrules.basictransitionrules.Rule
-import org.asmeta.asm2code.DomainToCpp
 import org.asmeta.asm2code.DomainToH
 import org.asmeta.asm2code.FindMonitoredInControlledFunct
-import org.asmeta.asm2code.FunctionToCpp
-import org.asmeta.asm2code.RuleToCpp
 import org.asmeta.asm2code.Util
 import java.util.List
 import java.util.ArrayList
@@ -25,10 +22,13 @@ import asmeta.AsmCollection
 import org.asmeta.asm2code.formatter.Formatter
 import java.nio.file.Files
 import java.nio.file.Paths
+import org.asmeta.asm2code.FunctionToC
+import org.asmeta.asm2code.RuleToC
+import org.asmeta.asm2code.DomainToC
 
-/**Generates .cpp ASM file */
-class CppGenerator extends AsmToCGenerator {
-	public static String Ext = ".cpp"
+/**Generates .c ASM file */
+class CGenerator extends AsmToCGenerator {
+	public static String Ext = ".c"
 	String initConrolledMonitored
 
 	new () {
@@ -44,7 +44,7 @@ class CppGenerator extends AsmToCGenerator {
 	List<Rule> seqCalledRules;
 	
 	def generate(AsmCollection model, String path) {
-		if (options === null) throw new Exception("TranslationOptions not inizialized")
+		if (options === null) throw new Exception("TranslationOptions not initialized")
 		var compiled = compileAsm(model)
 		if (options.formatter)
 			compiled = Formatter.formatCode(compiled)
@@ -63,13 +63,11 @@ class CppGenerator extends AsmToCGenerator {
 		functionSignature(asm)
 		// TODO fix include list
 		return '''
-				/* «asmName».cpp automatically generated from ASM2CODE */
+				/* «asmName».«Ext» automatically generated from ASM2CODE */
 				#include "«asmName».h"
 				
-				using namespace «asmName»namespace;
-				
-				/* Conversion of ASM rules in C++ methods */
-				«ruleDefinitions(asm)»
+				/* init static functions and elements of abstract domains */
+				«initStatic(asm)»
 				
 				/* Static function definition */
 				«functionDefinition(asm)»
@@ -77,12 +75,11 @@ class CppGenerator extends AsmToCGenerator {
 				«/*possibleValueOfStaticDomain(asm)*/»
 				
 				/* Function and domain initialization */
-				«asmName»::«asmName»()«/*initialStaticDomainDefinition(asm)*/»«/*initialStaticDomain(asm)*/»{
-				«initialStaticDomainArduino(asm)» //MOD
+				void init() {
 				«initialDynamicDomainDefinition(asm)»
 				«ELSE»
 				/* Function and domain initialization */
-				«asmName»::«asmName»()«initialStaticDomain(asm)»{
+				void init(){
 				«initialDynamicDomainDefinition(asm)»
 				«ENDIF»
 				/* Init static functions Abstract domain */
@@ -91,21 +88,13 @@ class CppGenerator extends AsmToCGenerator {
 				«functionInitialization(asm)»
 				}
 			
-				
-				/* initialize controlled functions that contains monitored functions in the init term */
-				void «asmName»::initControlledWithMonitored(){
-				«initConrolledMonitored»
-				}
-				
-			
 				/* Apply the update set */
-				void «asmName»::fireUpdateSet(){
+				void step(){
 					«updateSet(asmCol)»
 				}
-				
-				/* init static functions and elements of abstract domains */
-				«initStatic(asm)»
-				
+
+				/* Conversion of ASM rules in C functions */
+				«ruleDefinitions(asm)»
 		'''
 		
 	}
@@ -121,13 +110,11 @@ class CppGenerator extends AsmToCGenerator {
 		functionSignature(asm)
 		// TODO fix include list
 		return '''
-				/* «asmName».cpp automatically generated from ASM2CODE */
+				/* «asmName».c automatically generated from ASM2CODE */
 				#include "«asmName».h"
 				
-				using namespace «asmName»namespace;
-				
-				/* Conversion of ASM rules in C++ methods */
-				«ruleDefinitions(asm)»
+				/* init static functions and elements of abstract domains */
+				«initStatic(asm)»
 				
 				/* Static function definition */
 				«functionDefinition(asm)»
@@ -135,12 +122,12 @@ class CppGenerator extends AsmToCGenerator {
 				«/*possibleValueOfStaticDomain(asm)*/»
 				
 				/* Function and domain initialization */
-				«asmName»::«asmName»()«/*initialStaticDomainDefinition(asm)*/»«/*initialStaticDomain(asm)*/»{
+				void init()«/*initialStaticDomainDefinition(asm)*/»«/*initialStaticDomain(asm)*/»{
 				«initialStaticDomainArduino(asm)» //MOD
 				«initialDynamicDomainDefinition(asm)»
 				«ELSE»
 				/* Function and domain initialization */
-				«asmName»::«asmName»()«initialStaticDomain(asm)»{
+				void init()«/*initialStaticDomain(asm)*/»{
 				«initialDynamicDomainDefinition(asm)»
 				«ENDIF»
 				/* Init static functions Abstract domain */
@@ -149,20 +136,13 @@ class CppGenerator extends AsmToCGenerator {
 				«functionInitialization(asm)»
 				}
 			
-				
-				/* initialize controlled functions that contains monitored functions in the init term */
-				void «asmName»::initControlledWithMonitored(){
-				«initConrolledMonitored»
-				}
-				
-			
 				/* Apply the update set */
-				void «asmName»::fireUpdateSet(){
+				void step(){
 					«updateSet(asm)»
 				}
 				
-				/* init static functions and elements of abstract domains */
-				«initStatic(asm)»
+				/* Conversion of ASM rules in C methods */
+				«ruleDefinitions(asm)»
 				
 		'''
 
@@ -171,18 +151,19 @@ class CppGenerator extends AsmToCGenerator {
 	
 	
 	def initStatic(Asm asm) {
-		var sb = new StringBuffer;
-		for (dd : asm.headerSection.signature.domain) {
-			if (dd instanceof AbstractTd) {
-				var domain = new DomainToH(asm).visit(dd)
-				sb.append(options.stdNamespacePrefix + "set< " + domain + "*>" + domain + "::elems;\n")
-			}
-		}
-		for (fd : asm.headerSection.signature.function) {
-			if (fd instanceof StaticFunction && fd.codomain instanceof AbstractTd)
-				sb.append(new DomainToH(asm).visit(fd.codomain) + "*" + asm.name + "::" + fd.name + ";\n")
-		}
-		return sb.toString
+		return '''struct «asm.name» _«asm.name»;'''
+//		var sb = new StringBuffer;
+//		for (dd : asm.headerSection.signature.domain) {
+//			if (dd instanceof AbstractTd) {
+//				var domain = new DomainToH(asm).visit(dd)
+//				sb.append(options.stdNamespacePrefix + "set< " + domain + "*>" + domain + "::elems;\n")
+//			}
+//		}
+//		for (fd : asm.headerSection.signature.function) {
+//			if (fd instanceof StaticFunction && fd.codomain instanceof AbstractTd)
+//				sb.append(new DomainToH(asm).visit(fd.codomain) + "*" + asm.name + "::" + fd.name + ";\n")
+//		}
+//		return sb.toString
 	}
 
 	def functionAbstractDom(Asm asm) {
@@ -225,27 +206,23 @@ class CppGenerator extends AsmToCGenerator {
 			//println("IMPORT CLAUSE " + imp.moduleName.toString)
 			if(!imp.moduleName.contains("StandardLibrary")){
 				var String[] buffer = imp.moduleName.split("/")
-				var String name = buffer.get(buffer.length - 1)
-				//updateset.append('''«name.toLowerCase».fireUpdateSet();''')
-				updateset.append('''«name»::fireUpdateSet();''')
+				updateset.append('''step();''')
 			}
 		}
 		return updateset.toString
 	}
 	
 	def updateSet(AsmCollection asmCol){
-		var StringBuffer updateset = new StringBuffer
-		var asm = asmCol.main
+		val asm = asmCol.main
 		// check if the main asm has a main rule
-		if(asm.mainrule !== null)
-		for(asm1 : asmCol)
-			if(!asm1.name.contains("StandardLibrary"))
-			for (cf : asm1.headerSection.signature.function)
-				if (cf instanceof ControlledFunction)
-					updateset.append('''«cf.name»[0] = «cf.name»[1];
-						''')
-				//updateset.append('''«asm1.name»::fireUpdateSet();''')
-		return updateset.toString
+		if(asm.mainrule !== null) {
+			return asmCol.filter [ x | !x.name.contains("StandardLibrary") ]
+			      	     .flatMap [ asm1 | asm1.headerSection.signature.function.filter(ControlledFunction) ]
+			      		 .map [ cf | '''_«asm.name».out.«cf.name»[0] = _«asm.name».out.«cf.name»[1];''' ]
+						 .join("\n")
+		} else {
+			return ""
+		}
 	}
 
  
@@ -255,22 +232,20 @@ class CppGenerator extends AsmToCGenerator {
 			for (dd : asm.bodySection.domainDefinition) {
 				var String n = dd.definedDomain.name
 				initial.append((Util.getElemsSetName(dd.definedDomain.name) + ("(" +
-					(new DomainToCpp(asm).visit(dd)).replace("{", if (options.compilerType==CompilerType.ArduinoCompiler) 
+					(new DomainToC(asm).visit(dd)).replace("{", if (options.compilerType==CompilerType.ArduinoCompiler) 
 						"{&var" + n + "_" else "{var" + n + "_").replace(",",if (options.compilerType==CompilerType.ArduinoCompiler) ",&var" + n + "_" else ",var" + n + "_") + "),").replaceAll("\\s+","") + "\n"
 				))
 			}
 		}
 		if (asm.headerSection !== null && asm.headerSection.signature !== null &&
 			asm.headerSection.signature.domain !== null) {
-			for (ed : asm.headerSection.signature.domain) {
-				if (ed instanceof EnumTd) {
-					var String n = ed.name;
-					initial.append(Util.getElemsSetName(ed.name) + "(" + (new DomainToCpp(asm).visit(ed)).replace(
-						"{", if (options.compilerType==CompilerType.ArduinoCompiler) "{&var" + n + "_" else "{var_").replace(",", 
-							if (options.compilerType==CompilerType.ArduinoCompiler) ",&var_" + n + "_" else ",var_"
-						) + "
-					), \n")
-				}
+			for (ed : asm.headerSection.signature.domain.filter(EnumTd)) {
+				var String n = ed.name;
+				initial.append(Util.getElemsSetName(ed.name) + "(" + (new DomainToC(asm).visit(ed)).replace(
+					"{", if (options.compilerType==CompilerType.ArduinoCompiler) "{&var" + n + "_" else "{var_").replace(",", 
+						if (options.compilerType==CompilerType.ArduinoCompiler) ",&var_" + n + "_" else ",var_"
+					) + "
+				), \n")
 			}
 		}
 		if (initial.toString.length != 0)
@@ -288,16 +263,16 @@ class CppGenerator extends AsmToCGenerator {
 					var SetTerm s = dd.body as SetTerm;
 					var String domain = s.domain.name
 					println("is set term." + " Domain " + domain)
-					initial.append(Util.getElemsSetName(dd.definedDomain.name) + ":" + (new DomainToCpp(asm).visitArduino(s)  + "; \n"  ))
+					initial.append(Util.getElemsSetName(dd.definedDomain.name) + ":" + (new DomainToC(asm).visitArduino(s)  + "; \n"  ))
 				}
 				else
-				initial.append(Util.getElemsSetName(dd.definedDomain.name) + ":" + (new DomainToCpp(asm).visit(dd)  + "; \n"  ))
+				initial.append(Util.getElemsSetName(dd.definedDomain.name) + ":" + (new DomainToC(asm).visit(dd)  + "; \n"  ))
 			} 
 		}
 		if(asm.headerSection !== null && asm.headerSection.signature !== null && asm.headerSection.signature.domain !== null){
 			for(ed : asm.headerSection.signature.domain) {
 				if(ed instanceof EnumTd) {
-					initial.append("\n" + Util.getElemsSetName(ed.name) + ":" + (new DomainToCpp(asm).visit(ed,true)) + " \n")
+					initial.append("\n" + Util.getElemsSetName(ed.name) + ":" + (new DomainToC(asm).visit(ed,true)) + " \n")
 				}
 			}
 		}
@@ -307,33 +282,33 @@ class CppGenerator extends AsmToCGenerator {
 		else return ""
 	}
 	
-	def initialStaticDomain(Asm asm){
-		var StringBuffer initial = new StringBuffer
-		if(asm.bodySection !== null && asm.bodySection.domainDefinition !== null){
-			for (dd : asm.bodySection.domainDefinition) {
-				initial.append(Util.getElemsSetName(dd.definedDomain.name) + "(" + (new DomainToCpp(asm).visit(dd)) + "), \n"  )
-			} 
-		}
-		if(asm.headerSection !== null && asm.headerSection.signature !== null && asm.headerSection.signature.domain !== null){
-			for(ed : asm.headerSection.signature.domain) {
-				if(ed instanceof EnumTd) {
-					initial.append(Util.getElemsSetName(ed.name) + "(" + (new DomainToCpp(asm).visit(ed)) + "), \n")
-				}
-			}
-		}
-		if (initial.toString.length != 0)
-		return ": \n" + "//Static domain initialization \n" +
-			initial.toString.substring(0, initial.toString.length - 3) + "\n"
-		else return ""
-	}
+//	def initialStaticDomain(Asm asm){
+//		var StringBuffer initial = new StringBuffer
+//		if(asm.bodySection !== null && asm.bodySection.domainDefinition !== null){
+//			for (dd : asm.bodySection.domainDefinition) {
+//				initial.append(Util.getElemsSetName(dd.definedDomain.name) + "(" + (new DomainToCpp(asm).visit(dd)) + "), \n"  )
+//			} 
+//		}
+//		if(asm.headerSection !== null && asm.headerSection.signature !== null && asm.headerSection.signature.domain !== null){
+//			for(ed : asm.headerSection.signature.domain) {
+//				if(ed instanceof EnumTd) {
+//					initial.append(Util.getElemsSetName(ed.name) + "(" + (new DomainToCpp(asm).visit(ed)) + "), \n")
+//				}
+//			}
+//		}
+//		if (initial.toString.length != 0)
+//		return ": \n" + "//Static domain initialization \n" +
+//			initial.toString.substring(0, initial.toString.length - 3) + "\n"
+//		else return ""
+//	}
 	
 
 	def initialDynamicDomainDefinition(Asm asm) {
 		var StringBuffer initial = new StringBuffer
 		if (asm.defaultInitialState !== null && asm.defaultInitialState.domainInitialization !== null) {
 			for (dd : asm.defaultInitialState.domainInitialization) {
-				val domaintocpp = new DomainToCpp(asm).visit(dd)
-				initial.append(Util.getElemsSetName(dd.initializedDomain.name) + "=" + domaintocpp + ";\n")
+				val domaintoc = new DomainToC(asm).visit(dd)
+				initial.append(Util.getElemsSetName(dd.initializedDomain.name) + "=" + domaintoc + ";\n")
 			}
 		}
 		if (initial.length != 0)
@@ -364,11 +339,11 @@ class CppGenerator extends AsmToCGenerator {
 
 				if (containsMonitored == false)
 					initial.append(
-		  					'''«new FunctionToCpp(asm, options).visit(fd.initializedFunction)»
+		  					'''«new FunctionToC(asm, options).visit(fd.initializedFunction)»
 					''')
 				else
 					initialMonitored.append(
-		  					'''«new FunctionToCpp(asm, options).visit(fd.initializedFunction)»
+		  					'''«new FunctionToC(asm, options).visit(fd.initializedFunction)»
 					''')
 			}
 		}
@@ -399,7 +374,7 @@ class CppGenerator extends AsmToCGenerator {
 		if (asm.bodySection !== null && asm.bodySection.functionDefinition !== null) {
 			for (fd : asm.bodySection.functionDefinition)
 				sb.append(
-		  					'''«new FunctionToCpp(asm).visit(fd.definedFunction)»
+		  					'''«new FunctionToC(asm).visit(fd.definedFunction)»
 				''')
 			return sb.toString.replaceAll("\\$", "_")
 		}
@@ -411,7 +386,7 @@ class CppGenerator extends AsmToCGenerator {
 		// Let's find all the Static domains initialitazion
 		if (asm.bodySection !== null && asm.bodySection.domainDefinition !== null) {
 			for (dd : asm.bodySection.domainDefinition) {
-				initial.append(Util.getElemsSetName(dd.definedDomain.name) + "(" + new DomainToCpp(asm).visit(dd) +
+				initial.append(Util.getElemsSetName(dd.definedDomain.name) + "(" + new DomainToC(asm).visit(dd) +
 					") \n")
 			}
 		}
@@ -419,7 +394,7 @@ class CppGenerator extends AsmToCGenerator {
 			asm.headerSection.signature.domain !== null) {
 			for (ed : asm.headerSection.signature.domain) {
 				if (ed instanceof EnumTd) {
-					initial.append(Util.getElemsSetName(ed.name) + "(" + new DomainToCpp(asm).visit(ed) + ") \n")
+					initial.append(Util.getElemsSetName(ed.name) + "(" + new DomainToC(asm).visit(ed) + ") \n")
 				}
 			}
 		}
@@ -469,14 +444,14 @@ class CppGenerator extends AsmToCGenerator {
 	def String foo(RuleDeclaration r, String methodName, Asm asm) {
 		if (r.arity == 0)
 			return ('''
-				void «asm.name»::«methodName»(){
-					«new RuleToCpp(asm,false,options).visit(r.ruleBody as Rule)»
+				void «methodName»(){
+					«new RuleToC(asm,false,options).visit(r.ruleBody as Rule)»
 				}
 			''')
 		else
 			return ( '''
-				void «asm.name»::«methodName» («new Util().adaptRuleParam(r.variable, asm)»){
-					«new RuleToCpp(asm,false,options).visit(r.ruleBody)»
+				void «methodName» («new Util().adaptRuleParam(r.variable, asm)»){
+					«new RuleToC(asm,false,options).visit(r.ruleBody)»
 				}
 			''')
 

@@ -24,13 +24,13 @@
 							<goal>single</goal>
 						</goals>
 						<configuration>
-							<finalName>Asmeta2Cpp</finalName>
+							<finalName>Asmeta2C</finalName>
 							<appendAssemblyId>false</appendAssemblyId>
 							<outputDirectory>dist</outputDirectory>
 							<archive>
 								<manifest>
 									<mainClass>
-										org.asmeta.asm2code.main.Asmeta2Cpp
+										org.asmeta.asm2code.main.Asmeta2C
 									</mainClass>
 								</manifest>
 							</archive>

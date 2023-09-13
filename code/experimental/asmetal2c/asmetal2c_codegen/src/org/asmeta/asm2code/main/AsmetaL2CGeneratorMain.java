@@ -10,13 +10,13 @@ import org.asmeta.parser.ASMParser;
 import asmeta.AsmCollection;
 
 /** the main generator that calls the hpp and cpp generator and takes care of updating them in case*/
-public class AsmetaL2CppGeneratorMain {
+public class AsmetaL2CGeneratorMain {
 
 	// the generator for the header
 	static private HeaderGenerator hGenerator = new HeaderGenerator();
 
 	// the generator for the code 
-	static private CppGenerator cppGenerator = new CppGenerator();
+	static private CGenerator cGenerator = new CGenerator();
 	
 	
 	/**
@@ -49,13 +49,13 @@ public class AsmetaL2CppGeneratorMain {
 			currentAsmPath = dir.getPath() + File.separator;
 		}
 		//
-		File cppFile = new File(currentAsmPath + name + ".cpp");
-		File hFile = new File(currentAsmPath + name + ".h");
+		File cFile = new File(currentAsmPath + name + CGenerator.Ext);
+		File hFile = new File(currentAsmPath + name + HeaderGenerator.Ext);
 	
-		// delete cpp if exists
-		if (cppFile.exists())
-			cppFile.delete();
-		assert !cppFile.exists();
+		// delete c if exists
+		if (cFile.exists())
+			cFile.delete();
+		assert !cFile.exists();
 	
 		// delete h if exists
 		if (hFile.exists())
@@ -73,9 +73,9 @@ public class AsmetaL2CppGeneratorMain {
 		}
 		// write CPP
 		try {
-			cppGenerator.options = userOptions;
+			cGenerator.options = userOptions;
 			//cppGenerator.generate(model.getMain(), cppFile.getCanonicalPath());
-			cppGenerator.generate(model, cppFile.getCanonicalPath());
+			cGenerator.generate(model, cFile.getCanonicalPath());
 		} catch (Exception e) {
 			e.printStackTrace();
 			return new CompileResult(false, e.getMessage());
@@ -83,10 +83,10 @@ public class AsmetaL2CppGeneratorMain {
 	
 		// now compile it
 		System.out.println("Generated h file: " + hFile.getCanonicalPath());
-		System.out.println("Generated cpp file: " + cppFile.getCanonicalPath());
+		System.out.println("Generated c file: " + cFile.getCanonicalPath());
 		CompileResult result =  new CompileResult(true,"");
 		if(opt.compilerType != CompilerType.ArduinoCompiler && compile)//se il codice � per arduino, non compila. 
-			result = CppCompiler.compile(name + ".cpp", currentAsmPath, true, false, true);
+			result = CppCompiler.compile(name + CGenerator.Ext, currentAsmPath, true, false, true);
 		// clean the produced files
 		// delete h file
 		// hFile.delete();

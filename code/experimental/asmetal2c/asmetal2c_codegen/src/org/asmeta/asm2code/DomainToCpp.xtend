@@ -8,7 +8,7 @@ import asmeta.structure.DomainDefinition
 import asmeta.terms.basicterms.SetTerm
 import asmeta.terms.furtherterms.IntegerTerm
 
-class DomainToCpp extends ReflectiveVisitor<String> {
+class DomainToC extends ReflectiveVisitor<String> {
 
 	Asm asm
 
@@ -81,11 +81,11 @@ class DomainToCpp extends ReflectiveVisitor<String> {
 
 	def String visit(DomainDefinition object) {
 		//println("Type domain " + object.body )
-		return new TermToCpp(asm).visit(object.body)
+		return new TermToC(asm).visit(object.body)
 	}
 	
 	def String visit(DomainInitialization object) {
 		//println("Type domain " + object.body )
-		return new TermToCpp(asm).visit(object.body)
+		return new TermToC(asm).visit(object.body)
 	}	
 }

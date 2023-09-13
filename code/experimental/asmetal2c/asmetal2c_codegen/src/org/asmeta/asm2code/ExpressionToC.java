@@ -1,7 +1,7 @@
 package org.asmeta.asm2code;
 
 import java.util.List;
-import org.asmeta.asm2code.TermToCpp;
+import org.asmeta.asm2code.TermToC;
 import org.asmeta.asm2code.Util;
 
 import asmeta.structure.Asm;
@@ -10,10 +10,10 @@ import asmeta.terms.basicterms.Term;
 /** translation of complex (not atomic) terms, like and and so on.
  * Used by the TermToCpp
  */
-public class ExpressionToCpp {
+public class ExpressionToC {
 	protected Asm asm;
 
-	public ExpressionToCpp(Asm asm) {
+	public ExpressionToC(Asm asm) {
 		this.asm = asm;
 	}
 
@@ -176,8 +176,8 @@ public class ExpressionToCpp {
 	 *             the exception
 	 */
 	private String or(List<Term> argsTerm) throws Exception {
-		String first = new TermToCpp(asm).visit(argsTerm.get(0));
-		String second = new TermToCpp(asm).visit(argsTerm.get(1));
+		String first = new TermToC(asm).visit(argsTerm.get(0));
+		String second = new TermToC(asm).visit(argsTerm.get(1));
 		return updateVarName(first) + " | " + updateVarName(second);
 	}
 
@@ -193,8 +193,8 @@ public class ExpressionToCpp {
 	 *             the exception
 	 */
 	private String and(List<Term> argsTerm) throws Exception {
-		String first = new TermToCpp(asm).visit(argsTerm.get(0));
-		String second = new TermToCpp(asm).visit(argsTerm.get(1));
+		String first = new TermToC(asm).visit(argsTerm.get(0));
+		String second = new TermToC(asm).visit(argsTerm.get(1));
 		return updateVarName(first) + " & " + updateVarName(second);
 	}
 
@@ -210,7 +210,7 @@ public class ExpressionToCpp {
 	 *             the exception
 	 */
 	private String not(List<Term> argsTerm) throws Exception {
-		String arg = new TermToCpp(asm).visit(argsTerm.get(0));
+		String arg = new TermToC(asm).visit(argsTerm.get(0));
 		return "! (" + updateVarName(arg) + ")";
 	}
 
@@ -242,8 +242,8 @@ public class ExpressionToCpp {
 	 * @return the string
 	 */
 	private String lt(List<Term> argsTerm) {
-		String left = new TermToCpp(asm).visit(argsTerm.get(0));
-		String right = new TermToCpp(asm).visit(argsTerm.get(1));
+		String left = new TermToC(asm).visit(argsTerm.get(0));
+		String right = new TermToC(asm).visit(argsTerm.get(1));
 		//return left + " < " + right;
 		try {
 			Integer.parseInt(left);
@@ -262,8 +262,8 @@ public class ExpressionToCpp {
 	 * @return the string
 	 */
 	private String le(List<Term> argsTerm) {
-		String left = new TermToCpp(asm).visit(argsTerm.get(0));
-		String right = new TermToCpp(asm).visit(argsTerm.get(1));
+		String left = new TermToC(asm).visit(argsTerm.get(0));
+		String right = new TermToC(asm).visit(argsTerm.get(1));
 		//return left + " <= " + right;
 		try {
 			Integer.parseInt(left);
@@ -283,8 +283,8 @@ public class ExpressionToCpp {
 	 * @return the string
 	 */
 	private String gt(List<Term> argsTerm) {
-		String left = new TermToCpp(asm).visit(argsTerm.get(0));
-		String right = new TermToCpp(asm).visit(argsTerm.get(1));
+		String left = new TermToC(asm).visit(argsTerm.get(0));
+		String right = new TermToC(asm).visit(argsTerm.get(1));
 		//return left + " > " + right;
 		try {
 			Integer.parseInt(left);
@@ -304,8 +304,8 @@ public class ExpressionToCpp {
 	 * @return the string
 	 */
 	private String ge(List<Term> argsTerm) {
-		String left = new TermToCpp(asm).visit(argsTerm.get(0));
-		String right = new TermToCpp(asm).visit(argsTerm.get(1));
+		String left = new TermToC(asm).visit(argsTerm.get(0));
+		String right = new TermToC(asm).visit(argsTerm.get(1));
 		//return left + " >= " + right;
 		try {
 			Integer.parseInt(left);
@@ -325,8 +325,8 @@ public class ExpressionToCpp {
 	 * @return the string
 	 */
 	private String equals(List<Term> argsTerm) {
-		String left = new TermToCpp(asm).visit(argsTerm.get(0));
-		String right = new TermToCpp(asm).visit(argsTerm.get(1));
+		String left = new TermToC(asm).visit(argsTerm.get(0));
+		String right = new TermToC(asm).visit(argsTerm.get(1));
 		// System.out.println(argsTerm.get(0) + " = " + argsTerm.get(1));
 		// System.out.println(left + " = " + right);
 		return new Util().equals(updateVarName(left), updateVarName(right));
@@ -341,8 +341,8 @@ public class ExpressionToCpp {
 	 * @return the string
 	 */
 	private String notEquals(List<Term> argsTerm) {
-		String left = new TermToCpp(asm).visit(argsTerm.get(0));
-		String right = new TermToCpp(asm).visit(argsTerm.get(1));
+		String left = new TermToC(asm).visit(argsTerm.get(0));
+		String right = new TermToC(asm).visit(argsTerm.get(1));
 		return new Util().notEquals(updateVarName(left), updateVarName(right));
 	}
 
@@ -355,8 +355,8 @@ public class ExpressionToCpp {
 	 * @return the string
 	 */
 	private String mod(List<Term> argsTerm) {
-		String left = new TermToCpp(asm).visit(argsTerm.get(0));
-		String right = new TermToCpp(asm).visit(argsTerm.get(1));
+		String left = new TermToC(asm).visit(argsTerm.get(0));
+		String right = new TermToC(asm).visit(argsTerm.get(1));
 		return new Util().setPars(updateVarName(left) + " % " + updateVarName(right));
 	}
 
@@ -374,11 +374,11 @@ public class ExpressionToCpp {
 	 * @throws AsmNotSupportedException
 	 */
 	String minusUnary(List<Term> argsTerm) {
-		String str = new TermToCpp(asm).visit(argsTerm.get(0));
+		String str = new TermToC(asm).visit(argsTerm.get(0));
 		if (new Util().isNumber(str)) {
 			return String.valueOf(Integer.valueOf(str) * (-1));
 		} else {
-			return new TermToCpp(asm).visit(argsTerm.get(0));
+			return new TermToC(asm).visit(argsTerm.get(0));
 		}
 	}
 
@@ -391,8 +391,8 @@ public class ExpressionToCpp {
 	 * @return the string
 	 */
 	String minusBinary(List<Term> argsTerm) {
-		String left = new TermToCpp(asm).visit(argsTerm.get(0));
-		String right = new TermToCpp(asm).visit(argsTerm.get(1));
+		String left = new TermToC(asm).visit(argsTerm.get(0));
+		String right = new TermToC(asm).visit(argsTerm.get(1));
 		return new Util().setPars(updateVarName(left) + " - " + updateVarName(right));
 	}
 
@@ -405,7 +405,7 @@ public class ExpressionToCpp {
 	 * @return the string
 	 */
 String plusUnary(List<Term> argsTerm) {
-		return new TermToCpp(asm).visit(argsTerm.get(0));
+		return new TermToC(asm).visit(argsTerm.get(0));
 	}
 
 	/**
@@ -418,8 +418,8 @@ String plusUnary(List<Term> argsTerm) {
 	 */
 	String sum(List<Term> argsTerm) {
 		// System.out.println("Terms " + argsTerm.size());
-		String left = new TermToCpp(asm).visit(argsTerm.get(0));
-		String right = new TermToCpp(asm).visit(argsTerm.get(1));
+		String left = new TermToC(asm).visit(argsTerm.get(0));
+		String right = new TermToC(asm).visit(argsTerm.get(1));
 		return new Util().setPars(updateVarName(left) + " + " + updateVarName(right));
 	}
 
@@ -432,8 +432,8 @@ String plusUnary(List<Term> argsTerm) {
 	 * @return the string
 	 */
 	String mult(List<Term> argsTerm) {
-		String left = new TermToCpp(asm).visit(argsTerm.get(0));
-		String right = new TermToCpp(asm).visit(argsTerm.get(1));
+		String left = new TermToC(asm).visit(argsTerm.get(0));
+		String right = new TermToC(asm).visit(argsTerm.get(1));
 		return new Util().setPars(updateVarName(left) + " * " + updateVarName(right));
 	}
 
@@ -444,8 +444,8 @@ String plusUnary(List<Term> argsTerm) {
 	}*/
 	
 	String div(List<Term> argsTerm) {
-		String left = new TermToCpp(asm).visit(argsTerm.get(0));
-		String right = new TermToCpp(asm).visit(argsTerm.get(1));
+		String left = new TermToC(asm).visit(argsTerm.get(0));
+		String right = new TermToC(asm).visit(argsTerm.get(1));
 		return new Util().setPars(updateVarName(left) + " / " + updateVarName(right));
 	}
 }

@@ -17,6 +17,8 @@ import org.eclipse.emf.ecore.resource.Resource
 import org.eclipse.xtext.generator.IFileSystemAccess
 
 import org.asmeta.asm2code.ImportToH
+import asmeta.definitions.MonitoredFunction
+import asmeta.definitions.ControlledFunction
 
 /**Generates .h ASM file */
 class HeaderGenerator extends AsmToCGenerator {
@@ -46,42 +48,11 @@ class HeaderGenerator extends AsmToCGenerator {
 		val asmName = asm.name
 		val String platformDependentHeaders = if (options.compilerType == CompilerType.ArduinoCompiler)
 				'''
-					#define ARDUINOCOMPILER
-					#include <Arduino.h>
-					// The following two libs have to be installed into your Arduino Sketchbook
-					#include <ArduinoSTL.h>
-					#include <boost_1_51_0.h>
-					#include <string.h>				
-					#include <iostream> 
-					#include <vector> 
-					#include <set>
-					#include <map>
-					#include <list>
-					#include <boost/tuple/tuple.hpp>
-					#include <LiquidCrystal.h>
-					#include <LiquidCrystal_I2C.h>
-					#include <DS3231.h>
-					using namespace std;
-					/*Arduino.h uses WString instead... */
 				'''
 			else
 				'''
-				/*Arduino.h uses WString instead... */
-				#include <string.h>				
-				#include <iostream> 
-				#include <vector> 
-				#include <set>
-				#include <map>
-				#include <list>
-				//Andrea Belotti
-				#include <chrono>
-				//#include <tuple>
-				//#include <bits/stl_tree.h>
-				
-				using namespace std;
-				
-				//typedef std::string String;'''
-				//<list> instead of <boost/tuple/tuple.hpp>
+					#include <stdbool.h>
+				'''
 
 		return '''
 			«copyright»
@@ -90,44 +61,34 @@ class HeaderGenerator extends AsmToCGenerator {
 				#define «asmName.toUpperCase»_H
 				
 				«platformDependentHeaders»
-				#define ANY String
 				
 				
 				«includeLibrary(asm)»
 				
 				
 			/* DOMAIN DEFINITIONS */
-			namespace «asmName»namespace{
-				«domainSignature(asm)» //devo togliere questo in Timer perché non serve
-				}
-			
+				«domainSignature(asm)» 
 				
-				using namespace «asmName»namespace;
-				
-				«abstractClassDef(asm)» //devo togliere questo in Timer perché non serve
-				
-				class «asmName» «addExtension(asm)»{
+				struct «asmName» {
 				  
-				/* DOMAIN CONTAINERS */
-				«domainContainer(asm)»
-				public:
 				/* FUNCTIONS */
-				«functionSignature(asm)»
+				   struct {
+					«functionSignature(asm, MonitoredFunction)»
+				   } in;
+				   struct {
+					«functionSignature(asm, ControlledFunction)»
+				   } out;
+				};
+
 				/* RULE DEFINITION */
 				«ruleDefinition(asm)»
-				
-				«asmName»();
-				
-				void initControlledWithMonitored();
-				
-				void getInputs();
-				
-				void setOutputs(); 
-				
-				void fireUpdateSet();
-			
-				};
 				#endif
+				
+				void step();
+				
+				void init();
+				
+				extern struct «asmName» _«asmName»;
 		'''
 
 	}
@@ -173,27 +134,27 @@ class HeaderGenerator extends AsmToCGenerator {
 	 	return sb.toString
 	 }
 	 
-	 def addExtension(Asm asm){
-	 	var sb = new StringBuffer;
-	 	var boolean isFirst = true;
-	 	for(i : asm.headerSection.importClause){
-	 		if(i !== null){
-	 			var s = new ImportToH(asm).visit(i)
-	 			if(!s.contains("StandardLibrary")
- 				&& !s.contains("CTLlibrary")
- 				&& !s.contains("LTLlibrary")) { //Ignore StandardLibrary, CTllibrary and LTLlibrary import.
-		 			var String[] splitted = s.split("/")
-		 			var String s1 = splitted.get(splitted.length-1)
-		 			if(isFirst){
-		 				isFirst = false;
-		 				sb.append(": public virtual " + s1)
-	 				}
-			 		else sb.append(" , public virtual " +s1)
- 				}
-	 		}
-	 	}
-	 	return sb.toString
-	 }
+//	 def addExtension(Asm asm){
+//	 	var sb = new StringBuffer;
+//	 	var boolean isFirst = true;
+//	 	for(i : asm.headerSection.importClause){
+//	 		if(i !== null){
+//	 			var s = new ImportToH(asm).visit(i)
+//	 			if(!s.contains("StandardLibrary")
+// 				&& !s.contains("CTLlibrary")
+// 				&& !s.contains("LTLlibrary")) { //Ignore StandardLibrary, CTllibrary and LTLlibrary import.
+//		 			var String[] splitted = s.split("/")
+//		 			var String s1 = splitted.get(splitted.length-1)
+//		 			if(isFirst){
+//		 				isFirst = false;
+//		 				sb.append(": public virtual " + s1)
+//	 				}
+//			 		else sb.append(" , public virtual " +s1)
+// 				}
+//	 		}
+//	 	}
+//	 	return sb.toString
+//	 }
 	 
 	/** DONE */
 	def domainSignature(Asm asm) {
@@ -207,15 +168,15 @@ class HeaderGenerator extends AsmToCGenerator {
 		return sb.toString
 	}
 
-	def abstractClassDef(Asm asm) {
-		var sb = new StringBuffer;
-		for (dd : asm.headerSection.signature.domain) {
-			if (dd instanceof AbstractTd)
-				sb.append("class " + asm.name + "namespace::" + new DomainToH(asm).visit(dd) + "{\n" + defineElems(dd) +
-					"};\n")
-		}
-		return sb.toString
-	}
+//	def abstractClassDef(Asm asm) {
+//		var sb = new StringBuffer;
+//		for (dd : asm.headerSection.signature.domain) {
+//			if (dd instanceof AbstractTd)
+//				sb.append("class " + asm.name + "namespace::" + new DomainToH(asm).visit(dd) + "{\n" + defineElems(dd) +
+//					"};\n")
+//		}
+//		return sb.toString
+//	}
 
 	/*
 	 * def domainSignature(Asm asm) {
@@ -247,9 +208,9 @@ class HeaderGenerator extends AsmToCGenerator {
 	}
 
 	/** DONE */
-	def functionSignature(Asm asm) {
+	def functionSignature(Asm asm, Class<?> functionType) {
 		var sb = new StringBuffer;
-		for (fd : asm.headerSection.signature.function) {
+		for (fd : asm.headerSection.signature.function.filter(functionType)) {
 			sb.append(new FunctionToH(asm, options).visit(fd) + "\n")
 		}
 		return sb.toString

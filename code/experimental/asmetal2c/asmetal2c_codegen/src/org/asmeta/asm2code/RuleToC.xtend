@@ -33,9 +33,9 @@ import asmeta.definitions.domains.AbstractTd
 import org.asmeta.asm2code.main.TranslatorOptions
 import java.util.ArrayList
 
-class RuleToCpp extends RuleVisitor<String> {
+class RuleToC extends RuleVisitor<String> {
 
-	// private static final Logger LOGGER = Logger.getLogger(RuleToCpp.name);
+	// private static final Logger LOGGER = Logger.getLogger(RuleToC.name);
 	Asm res;
 	boolean seqBlock;
 	TranslatorOptions options
@@ -50,14 +50,14 @@ class RuleToCpp extends RuleVisitor<String> {
 	override String visit(BlockRule object) {
 		return '''
 		{ //par
-			«new RuleToCpp(res,false,options).printRules(object.getRules())»
+			«new RuleToC(res,false,options).printRules(object.getRules())»
 		}//endpar'''
 	}
 
 	def private String printRules(EList<Rule> rules) {
 		var StringBuffer sb = new StringBuffer
 		for (var int i = 0; i < rules.size(); i++) {
-			sb.append(new RuleToCpp(res, seqBlock, options).visit(rules.get(i)))
+			sb.append(new RuleToC(res, seqBlock, options).visit(rules.get(i)))
 		}
 		return sb.toString()
 	}
@@ -77,7 +77,7 @@ class RuleToCpp extends RuleVisitor<String> {
 	def private String printListTerm(EList<Term> term) {
 		var sb = new StringBuffer
 		for (var int i = 0; i < term.size(); i++) {
-			sb.append('''«new TermToCpp(res).visit(term.get(i))», ''')
+			sb.append('''«new TermToC(res).visit(term.get(i))», ''')
 		}
 		return sb.substring(0, sb.length - 2)
 	}
@@ -92,14 +92,14 @@ class RuleToCpp extends RuleVisitor<String> {
 	 * 			if (object.variable.isEmpty)
 	 * 				return '''
 	 * 					void «methodName»(){ 
-	 * 						«new RuleToCpp(res,seq).visit(object.ruleBody)»
+	 * 						«new RuleToC(res,seq).visit(object.ruleBody)»
 	 * 					}
 	 * 				'''
 	 * 			else {
 	 * 				return '''
 	 * 					
 	 * 					void «methodName» «new Util().adaptRuleParam(object.variable,res)»{ 
-	 * 						«new RuleToCpp(res,seq).visit(object.ruleBody)»
+	 * 						«new RuleToC(res,seq).visit(object.ruleBody)»
 	 * 					}
 	 * 				'''
 	 * 			}
@@ -114,14 +114,14 @@ class RuleToCpp extends RuleVisitor<String> {
 	 * 			if (object.variable.isEmpty)
 	 * 				return '''
 	 * 					void «methodName»(){ 
-	 * 						«new RuleToCpp(res,seq).visit(object.ruleBody)»
+	 * 						«new RuleToC(res,seq).visit(object.ruleBody)»
 	 * 					}
 	 * 				'''
 	 * 			else {
 	 * 				return '''
 	 * 					
 	 * 					void «methodName» «new Util().adaptRuleParam(object.variable,res)»{ 
-	 * 						«new RuleToCpp(res,seq).visit(object.ruleBody)»
+	 * 						«new RuleToC(res,seq).visit(object.ruleBody)»
 	 * 					}
 	 * 				'''
 	 * 			}
@@ -164,7 +164,7 @@ class RuleToCpp extends RuleVisitor<String> {
 	override String visit(SeqRule object) {
 		return '''
 			{//seq
-				«new RuleToCpp(res,true,options).printRules(object.rules)»
+				«new RuleToC(res,true,options).printRules(object.rules)»
 			}//endseq
 		'''
 	}
@@ -181,12 +181,12 @@ class RuleToCpp extends RuleVisitor<String> {
 		// '''
 		var StringBuffer result = new StringBuffer
 		result.
-			append('''«new TermToCpp(res,true).visit(object.location)» = «new TermToCpp(res,false).visit(object.updatingTerm)»;
+			append('''«new TermToC(res,true).visit(object.location)» = «new TermToC(res,false).visit(object.updatingTerm)»;
 			''')
 		if (seqBlock) {
 			// add the fire update
 			result.
-				append('''«new TermToCpp(res,false).visit(object.location)» = «new TermToCpp(res,true).visit(object.location)»;''')
+				append('''«new TermToC(res,false).visit(object.location)» = «new TermToC(res,true).visit(object.location)»;''')
 		}
 		return result.toString
 	}
@@ -202,20 +202,20 @@ class RuleToCpp extends RuleVisitor<String> {
 				sb.append(
 					'''
 				if(«compareTerms(object.getTerm,object.getCaseTerm.get(i))»){
-					«new RuleToCpp(res,seqBlock,options).visit(object.getCaseBranches.get(i))»
+					«new RuleToC(res,seqBlock,options).visit(object.getCaseBranches.get(i))»
 				}''')
 			else
 				sb.append(
 					'''
 				else if(«compareTerms(object.getTerm,object.getCaseTerm.get(i))»){
-					«new RuleToCpp(res,seqBlock,options).visit(object.getCaseBranches().get(i))»
+					«new RuleToC(res,seqBlock,options).visit(object.getCaseBranches().get(i))»
 				}''')
 		}
 		if (object.getOtherwiseBranch() !== null)
 			sb.append(
 			'''
 				else{ 
-				 	«new RuleToCpp(res,seqBlock,options).visit(object.getOtherwiseBranch())»
+				 	«new RuleToC(res,seqBlock,options).visit(object.getOtherwiseBranch())»
 				}
 			''')
 		return sb.toString
@@ -225,9 +225,9 @@ class RuleToCpp extends RuleVisitor<String> {
 		if (leftTerm.domain.toString.compareTo(rightTerm.domain.toString) != 0)
 			return '''Impossible to compare Terms'''
 		else if (leftTerm instanceof StringDomain)
-			return '''«new TermToCpp(res).visit(leftTerm)».compare(«new TermToCpp(res).visit(rightTerm)»)==0'''
+			return '''«new TermToC(res).visit(leftTerm)».compare(«new TermToC(res).visit(rightTerm)»)==0'''
 		else /* This is valid also for complex term*/
-			return '''«new TermToCpp(res).visit(leftTerm)»==«new TermToCpp(res).visit(rightTerm)»'''
+			return '''«new TermToC(res).visit(leftTerm)»==«new TermToC(res).visit(rightTerm)»'''
 	}
 
 	override String visit(ChooseRule object) {
@@ -236,39 +236,42 @@ class RuleToCpp extends RuleVisitor<String> {
 		for (var i = 0; i < object.getRanges.size; i++)
 			if (object.getRanges.get(i).domain instanceof PowersetDomain)
 				sb.append('''
-					set<const «new ToString(res).visit((object.getRanges.get(i).domain as PowersetDomain).baseDomain)»*> point«i»;
+					NOT IMPLEMENTED IN C (RuleToC line 239)
 				''')
+//				sb.append('''
+//					set<const «new ToString(res).visit((object.getRanges.get(i).domain as PowersetDomain).baseDomain)»*> point«i»;
+//				''')
 			// println("Object ranges: " + (object.getRanges.get(i).domain as PowersetDomain).baseDomain)
 			else
 				sb.append('''
-					NOT IMPLEMENTED IN C++ (RuleToCpp line 264)
+					NOT IMPLEMENTED IN C (RuleToC line 264)
 				''')
 		for (var i = 0; i < object.getRanges.size; i++)
-			if (object.getRanges.get(i).domain instanceof PowersetDomain) {
-				// devo dichiarare il set di valori nel caso si metta un dominio diverso da un nome di un dominio definito, per esempio: {0..5} {1,5,9} 
-				if (new Util().isNotNumerable((object.getRanges.get(i).domain as PowersetDomain).baseDomain)) {
-					sb.append('''
-						«new DomainToH(res).visit(object.getRanges.get(i).domain)» «new ToString(res).visit((object.getRanges.get(i).domain as PowersetDomain).baseDomain)+i»_elems = «new TermToCpp(res).visit(object.getRanges.get(i))»;
-					''')
-					counter = counter + 1
-					sb.append('''
-						for(auto const& «new TermToCpp(res).visit(object.getVariable.get(i))» : «new ToString(res).visit((object.getRanges.get(i).domain as PowersetDomain).baseDomain)+i»_elems){
-					''')
-				} else if ((object.getRanges.get(i).domain as PowersetDomain).baseDomain instanceof AbstractTd)
-					sb.append('''
-						for(const auto& «new TermToCpp(res).visit(object.getVariable.get(i))» : «new ToString(res).visit((object.getRanges.get(i).domain as PowersetDomain).baseDomain)»::elems)
-					''')
-				else
-					sb.append('''
-						for(auto const& «new TermToCpp(res).visit(object.getVariable.get(i))» : «new ToString(res).visit((object.getRanges.get(i).domain as PowersetDomain).baseDomain)»_elems)
-					''')
-			} else
+//			if (object.getRanges.get(i).domain instanceof PowersetDomain) {
+//				// devo dichiarare il set di valori nel caso si metta un dominio diverso da un nome di un dominio definito, per esempio: {0..5} {1,5,9} 
+//				if (new Util().isNotNumerable((object.getRanges.get(i).domain as PowersetDomain).baseDomain)) {
+//					sb.append('''
+//						«new DomainToH(res).visit(object.getRanges.get(i).domain)» «new ToString(res).visit((object.getRanges.get(i).domain as PowersetDomain).baseDomain)+i»_elems = «new TermToCpp(res).visit(object.getRanges.get(i))»;
+//					''')
+//					counter = counter + 1
+//					sb.append('''
+//						for(auto const& «new TermToCpp(res).visit(object.getVariable.get(i))» : «new ToString(res).visit((object.getRanges.get(i).domain as PowersetDomain).baseDomain)+i»_elems){
+//					''')
+//				} else if ((object.getRanges.get(i).domain as PowersetDomain).baseDomain instanceof AbstractTd)
+//					sb.append('''
+//						for(const auto& «new TermToCpp(res).visit(object.getVariable.get(i))» : «new ToString(res).visit((object.getRanges.get(i).domain as PowersetDomain).baseDomain)»::elems)
+//					''')
+//				else
+//					sb.append('''
+//						for(auto const& «new TermToCpp(res).visit(object.getVariable.get(i))» : «new ToString(res).visit((object.getRanges.get(i).domain as PowersetDomain).baseDomain)»_elems)
+//					''')
+//			} else
 				sb.append('''
-					//NOT IMPLEMENTED IN C++ (RuleToCpp line 283)	
+					//NOT IMPLEMENTED IN C (RuleToC line 283)	
 						''')
 		if (object.getGuard !== null)
 			sb.append('''
-				if(«new TermToCpp(res).visit(object.getGuard)»){
+				if(«new TermToC(res).visit(object.getGuard)»){
 			''')
 		else
 			sb.append('''{
@@ -276,17 +279,24 @@ class RuleToCpp extends RuleVisitor<String> {
 	//	var ArrayList<String> pointerTerms = new ArrayList()
 		for (var i = 0; i < object.getVariable.size; i++)
 			if ((object.getRanges.get(i).domain as PowersetDomain).baseDomain instanceof AbstractTd){
-				var termName= new TermToCpp(res).visit(object.getVariable.get(i))
+//				var termName= new TermToCpp(res).visit(object.getVariable.get(i))
+//				sb.append('''
+//					point«i».push_back(&(*«termName»));
+//				''')
 				sb.append('''
-					point«i».push_back(&(*«termName»));
-				''')
+					//NOT IMPLEMENTED IN C (RuleToC line 287)	
+						''')
+
 				/*println("TERM: " + termName)
 				pointerTerms.add(termName)*/
 				}
 			else
 				sb.append('''
-					point«i».push_back(&«new TermToCpp(res).visit(object.getVariable.get(i))»);
-				''')
+					//NOT IMPLEMENTED IN C (RuleToC line 295)	
+						''')
+//				sb.append('''
+//					point«i».push_back(&«new TermToCpp(res).visit(object.getVariable.get(i))»);
+//				''')
 		for (var i = 0; i < counter; i++)
 			sb.append('''
 				}
@@ -307,7 +317,7 @@ class RuleToCpp extends RuleVisitor<String> {
 		''')
 		for (var i = 0; i < object.getVariable.size; i++)
 			sb.append('''
-				auto «new TermToCpp(res).visit(object.getVariable.get(i))» = *point«i»[rndm];
+				auto «new TermToC(res).visit(object.getVariable.get(i))» = *point«i»[rndm];
 			''')
 		if (object.getIfnone !== null)
 		{
@@ -343,18 +353,18 @@ class RuleToCpp extends RuleVisitor<String> {
 			if ((object.getRanges.get(i).domain as PowersetDomain).baseDomain instanceof AbstractTd)
 				sb.append(
 			'''
-					for(auto «new TermToCpp(res).visit(object.getVariable.get(i))» : «new ToString(res).visit((object.getRanges.get(i).domain as PowersetDomain).baseDomain)»::elems)
+					for(auto «new TermToC(res).visit(object.getVariable.get(i))» : «new ToString(res).visit((object.getRanges.get(i).domain as PowersetDomain).baseDomain)»::elems)
 				''')
 			else
 				sb.append(
 			'''
-					for(auto «new TermToCpp(res).visit(object.getVariable.get(i))» : «new ToString(res).visit((object.getRanges.get(i).domain as PowersetDomain).baseDomain)»_elems)
+					for(auto «new TermToC(res).visit(object.getVariable.get(i))» : «new ToString(res).visit((object.getRanges.get(i).domain as PowersetDomain).baseDomain)»_elems)
 				''')
 
 		if (object.getGuard !== null)
 			sb.append('''
 				«""»
-					if(«new TermToCpp(res).visit(object.getGuard)»){	
+					if(«new TermToC(res).visit(object.getGuard)»){	
 						«visit(object.getDoRule)»
 					}
 			''')
@@ -373,18 +383,18 @@ class RuleToCpp extends RuleVisitor<String> {
 
 		for (var int i = 0; i < object.getVariable.size; i++) {
 			let.
-				append('''auto «new TermToCpp(res).visit(object.getVariable.get(i))» = «new TermToCpp(res).visit(object.getInitExpression.get(i))»;
+				append('''auto «new TermToC(res).visit(object.getVariable.get(i))» = «new TermToC(res).visit(object.getInitExpression.get(i))»;
 				''')
 		}
-		let.append('''«new RuleToCpp(res,seqBlock,options).visit(object.getInRule)»
+		let.append('''«new RuleToC(res,seqBlock,options).visit(object.getInRule)»
 }''')
 		return let.toString
 	}
 
 	def String visit(IterativeWhileRule object) {
 		return '''
-		while («new TermToCpp(res,false).visit(object.guard)»){
-			«new RuleToCpp(res,true,options).visit(object.rule)»
+		while («new TermToC(res,false).visit(object.guard)»){
+			«new RuleToC(res,true,options).visit(object.rule)»
 		}'''
 	}
 
@@ -399,22 +409,22 @@ class RuleToCpp extends RuleVisitor<String> {
 	override String visit(ConditionalRule object) {
 		if (object.getElseRule() === null)
 			return '''
-				if («new TermToCpp(res).visit(object.guard)»){ 
-					«new RuleToCpp(res,seqBlock,options).visit(object.thenRule)»
+				if («new TermToC(res).visit(object.guard)»){ 
+					«new RuleToC(res,seqBlock,options).visit(object.thenRule)»
 				}
 			'''
 		else if (object.elseRule instanceof ConditionalRule)
 			return '''
-				if («new TermToCpp(res).visit(object.getGuard)»){ 
-						«new RuleToCpp(res,seqBlock,options).visit(object.thenRule)»
-				} else «new RuleToCpp(res,seqBlock,options).visit(object.elseRule)»
+				if («new TermToC(res).visit(object.getGuard)»){ 
+						«new RuleToC(res,seqBlock,options).visit(object.thenRule)»
+				} else «new RuleToC(res,seqBlock,options).visit(object.elseRule)»
 			'''
 		else
 			return '''
-					if («new TermToCpp(res).visit(object.getGuard)»){ 
-					«new RuleToCpp(res,seqBlock,options).visit(object.thenRule)»
+					if («new TermToC(res).visit(object.getGuard)»){ 
+					«new RuleToC(res,seqBlock,options).visit(object.thenRule)»
 					}else{
-					«new RuleToCpp(res,seqBlock,options).visit(object.elseRule)»
+					«new RuleToC(res,seqBlock,options).visit(object.elseRule)»
 				}
 			'''
 	}
@@ -436,9 +446,9 @@ class RuleToCpp extends RuleVisitor<String> {
 		for (var i = 0; i < rule.boundVar.size; i++)
 			string.append(
 				new DomainToH(res, true).visit(rule.extendedDomain) + " " +
-					new TermToCpp(res).visit(rule.boundVar.get(i)) + " = new " +
+					new TermToC(res).visit(rule.boundVar.get(i)) + " = new " +
 					new DomainToH(res).visit(rule.extendedDomain) + "();\n");
-		return string.toString + new RuleToCpp(res, seqBlock, options).visit(rule.doRule)
+		return string.toString + new RuleToC(res, seqBlock, options).visit(rule.doRule)
 	// throw new UnsupportedOperationException("TODO: auto-generated method stub")
 	}
 
