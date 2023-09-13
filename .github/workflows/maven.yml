@@ -43,5 +43,5 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: asm2c-cli
-        path: code/experimental/asmetal2cpp/asmetal2c_cli/dist/Asmeta2C.jar
+        path: code/experimental/asmetal2c/asmetal2c_cli/dist/Asmeta2C.jar
         retention-days: 7
