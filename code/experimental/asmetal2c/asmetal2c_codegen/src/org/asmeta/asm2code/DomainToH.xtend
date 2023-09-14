@@ -154,7 +154,7 @@ class DomainToH extends ReflectiveVisitor<String> {
 
 	def String visit(EnumTd object) {
 		var StringBuffer sb = new StringBuffer
-		sb.append('''typedef enum «object.name» {''')
+		sb.append('''typedef enum {''')
 		for (var int i = 0; i < object.element.size; i++) {
 			sb.append('''«new ToString(res).visit(object.element.get(i))», ''')
 		}
