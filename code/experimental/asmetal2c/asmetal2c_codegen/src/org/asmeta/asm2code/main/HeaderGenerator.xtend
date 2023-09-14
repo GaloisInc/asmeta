@@ -82,13 +82,13 @@ class HeaderGenerator extends AsmToCGenerator {
 
 				/* RULE DEFINITION */
 				«ruleDefinition(asm)»
-				#endif
 				
 				void step();
 				
 				void init();
 				
 				extern struct «asmName» _«asmName»;
+				#endif
 		'''
 
 	}
